@@ -476,11 +476,11 @@ With Docker Compose, we don't need multiple long and complicated "docker build" 
 
 To install Docker Compose at Linux (or WSL2 on Windows):
 
-1. sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+1. sudo curl -L "<https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname> -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 2. sudo chmod +x /usr/local/bin/docker-compose
 3. sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 4. to verify: docker-compose --version
-5. Also see: https://docs.docker.com/compose/install/
+5. Also see: <https://docs.docker.com/compose/install/>
 
 ### 6-1: Create a Docker Compose file
 
@@ -502,4 +502,143 @@ Check the codes folder. Check docker-compose.yaml file.
 5. docker-compose down
    * This stops every thing, and delete containers and networks. However, this does not delete volumes.
    * If you want to delete volumes, docker-compose down -v
- 
+
+### 6-2: Create a Docker Compose file with multiple containers
+
+Check the codes folder. Check docker-compose.yaml file.
+
+* For bind mounts, We can use relative path for Docker Compose. This is different from Docker file.
+* Note the "depends_on" so that 1 service can depend on others to be up and running first.
+* For interactive mode, we can use "stdin-open" and "tty".
+
+1. Go to the folder where docker-compose.yaml file sits.
+2. docker-compose up -d
+3. docker ps
+   * Although the container name is a bit different from the service name in docker-compose.yaml. We can still use the service name in the yaml file in our codes.
+4. At host, open localhost:3000 and it is working.
+5. docker-compose down
+
+### 6-3: Other helpful commands and the container names created
+
+Helpful commands
+
+* docker compose up --help
+* docker compose up --build
+  * This will force the images to rebuild.
+* docker compose build
+  * This will only build the images.
+
+Container names created
+
+* The full name created by Docker Compose is "folder_name"_"service_name"_"number".
+* Although the container name is a bit different from the service name in docker-compose.yaml. We can still use the service name in the yaml file in our codes.
+* You can force Docker Compose to use a specific name by using "container_name" is docker-compose.yaml file.
+
+## Tutorial 7: Utility container
+
+### 7-1: Basic Node.js usages
+
+Scenario 1: interactive mode
+
+1. docker run -it node
+2. Press Ctrl-C twice
+
+Scenario 2: "exec" to run a command in the background container
+
+1. docker run -it -d node
+2. docker exec -it container_name npm init
+
+Scenario 3: Change the default command when a container runs
+
+1. docker run -it node npm init
+
+### 7-2: First utility container
+
+Check the codes folder.
+
+1. docker build -t node-util .
+2. docker run -it -v /home/chsin/tutorials/7-2:/app node-util npm init
+   * We are using bind mount to have the files created by our container at our host machine.
+3. Then you can see we have a new package.json file on the host machine. So we manage to create our package.json file without really installing Node.js.
+
+### 7-3: ENTRYPOINT
+
+Check the codes folder. The command used in docker command line will be "appended" to the command specified at "ENTRYPOINT" of Dockerfile.
+
+1. docker build -t mynpm .
+2. docker run -it -v /home/chsin/tutorials/7-3:/app mynpm init
+3. Then you can see we have a new package.json file on the host machine.
+4. docker run -it -v /home/chsin/tutorials/7-3:/app mynpm install express --save
+5. Then you can see we have a new package-lock.json file and node_modules folder on the host machine.
+
+### 7-4: Use Docker Compose
+
+Check the codes folder.
+
+1. docker-compose run --rm npm init
+   * "run" lets us run a single service in docker-compose.yaml.
+2. Then you can see we have a new package.json file on the host machine.
+
+## Tutorial 8: A complex utility container: A Laravel & PHP setup
+
+Target setup
+
+* Host machine source code folder
+* App Container: PHP interpreter
+  * This has access to the host machine source code folder to interpret the PHP codes on the host machine.
+  * This will generate response for web request.
+* App Container: Nginx web server
+  * This will use PHP interpreter to get the response for web request.
+* App Container: MySQL database
+  * PHP interpreter writes/reads from the MySQL database.
+* Utility Container: Composer
+  * This handles packages/extensions for PHP. Laravel uses this.
+* Utility Container: Laravel Artisan
+* Utility Container: npm
+  * Laravel uses this for some of the front-end logic.
+
+### 8-1: App Container - Nginx web server
+
+Check [nginx Docker image](https://hub.docker.com/_/nginx).
+
+Check the codes folder. Check docker-compose.yaml.
+
+### 8-2: App Container - PHP interpreter
+
+Check [PHP Docker image](https://hub.docker.com/_/php/).
+
+Check the codes folder.
+
+* docker-compose.yaml
+* nginx/nginx.conf
+  * We are using 9000 port, as specified by PHP Docker image.
+* dockerfiles/php.dockerfile
+  * Notes that several values are matching between nginx/nginx.conf and dockerfiles/php.dockerfile.
+
+### 8-3: App Container - MySQL database
+
+Check [MySQL Docker image](https://hub.docker.com/_/mysql).
+
+Check the codes folder. Check docker-compose.yaml file.
+
+### 8-4: Utility Container - Composer
+
+Check the codes folder.
+
+* docker-compose.yaml
+* dockerfiles/composer.dockerfile
+
+### 8-5: Creating a Laravel app via the Composer utility container
+
+Check [Laravel installation](https://laravel.com/docs/11.x/installation).
+
+1. docker-compose run --rm composer create-project --prefer-dist laravel/laravel .
+   * Once it is done, you can see the Laravel app codes at ./src folder on the host machine.
+2. At ./src/.env file, for the DB_XXXX section, we need to adjust it so that Laravel can connect to MySQL database.
+   * For Docker Compose, the target MySQL IP should be the service name.
+   * Other values should match the MySQL environment setups.
+3. At docker-compose.yaml, we added 1 bind mount to the "server" service, so that the nignx web server has the web server codes.
+4. docker-compose up -d --build server
+   * This only starts the target 3 container services, because we also have "depends_on" in docker-compose.yaml file.
+
+## Tutorial 9:
