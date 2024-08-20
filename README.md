@@ -641,4 +641,23 @@ Check [Laravel installation](https://laravel.com/docs/11.x/installation).
 4. docker-compose up -d --build server
    * This only starts the target 3 container services, because we also have "depends_on" in docker-compose.yaml file.
 
-## Tutorial 9:
+## Tutorial 9: Deploying containers on the cloud, e.g., AWS EC2/ECS, and multi-stage builds
+
+Check the codes folder.
+
+* frontend/Dockerfile.prod uses multi-stage builds.
+
+## Tutorial 10: Mid-summary of Docker and Containers
+
+## Tutorial 11: Getting started with Kubernetes
+
+## Tutorial 12: Kubernetes in actions
+
+### 12-1: Installing Kubernetes
+
+* [Install kubectl](https://kubernetes.io/docs/tasks/tools/)
+* [Install minikube](https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download)
+* [Kubernetes Setup with Minikube on WSL2](https://gaganmanku96.medium.com/kubernetes-setup-with-minikube-on-wsl2-2023-a58aea81e6a3)
+* [Getting Minikube on WSL2 Ubuntu working](https://gist.github.com/wholroyd/748e09ca0b78897750791172b2abb051)
+
+### 12-2: 
