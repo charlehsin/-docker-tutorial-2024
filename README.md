@@ -660,4 +660,95 @@ Check the codes folder.
 * [Kubernetes Setup with Minikube on WSL2](https://gaganmanku96.medium.com/kubernetes-setup-with-minikube-on-wsl2-2023-a58aea81e6a3)
 * [Getting Minikube on WSL2 Ubuntu working](https://gist.github.com/wholroyd/748e09ca0b78897750791172b2abb051)
 
-### 12-2: 
+### 12-2: First deployment - the imperative approach
+
+Check the codes folder.
+
+1. Build Docker image.
+   * docker build -t kub-first-app .
+2. Push the image to Docker Hub.
+   * docker tag kub-first-app academind/kub-first-app
+   * docker login
+   * docker push
+3. Check Kubernetes cluster is running.
+   * minikube status
+4. If minikube is not running and you need to start minikube
+   * minikube start --driver=docker
+   * minikube start --driver=virtualbox
+5. Get help info of kubectl.
+   * kubectl help
+6. Create a new deployment, using our just built Docker image.
+   * kubectl create deployment first-app --image=academind/kub-first-app
+7. Get the deployments created.
+   * kubectl get deployments
+8. Get the pods created.
+   * kubectl get pods
+9. Open minikube dashboard webpage to the deployments and the pods.
+   * minikube dashboard
+
+Currently, we still cannot talk to the our application from outside the Kubernetes cluster. To do that, we will need the "service".
+
+### 12-3: Exposing a deployment with a "Service"
+
+This is following the result of 12-2. "Services" group Pods with a shared IP and allow external access to Pods.
+
+1. Create a service with LoadBalancer type and with exposed 8080 port.
+   * kubectl expose deployment first-app --type=LoadBalancer --port=8080
+2. Get the services created.
+   * kubectl get services
+3. To get an URL to use from outside the Kubernetes cluster.
+   * minikube service first-app
+   * Note: If the Kubernetes is not on a local machine, we don't need this step and "kubectl get services" should show the external IP.
+4. Open that URL by using a web browser.
+
+### 12-4: Restarting containers
+
+This is following the result of 12-3.
+
+1. Open that "URL/error" by using a web browser.
+   * Because of the way our app is written, this will crash our Node.js app.
+   * However, Kubernetes will auto-restart the pod.
+2. Get the pods. You can see the pod has ""Error" status in the beginning and then will be running again.
+   * kubectl get pods
+3. You can also see the restarting events on "minikube dashboard" also.
+
+### 12-5: Scaling in action
+
+This is following the result of 12-4.
+
+1. Create pod replicas.
+   * kubectl scale deployment/first-app --replicas=3
+2. Get pods. We should see 3 our pods.
+   * kubectl get pods
+3. You can see this on "minikube dashboard" also.
+4. If you open that "URL/error" by using a web browser to crash the pod, Kubernetes will auto-direct new request to other pods.
+5. Scale pods down to 1 again.
+   * kubectl scale deployment/first-app --replicas=1
+6. Get pods. We should see 3 our pods.
+   * kubectl get pods
+
+### 12-6: Changing codes, updating deployments, rollback deployment
+
+This is following the result of 12-5.
+
+1. Change the html at app.js of the source codes.
+2. Rebuild the Docker image.
+3. Push the image to Docker Hub.
+4. Check deployments.
+   * kubectl get deployments
+5. Set a new image to a specific container (kub-first-app) in a specific deployment (first-app).
+   * kubectl set image deployment/first-app kub-first-app=academind/kub-first-app
+   * Note: You can find the container name on "minikube dashboard".
+6. If you check the deployments, nothing is happening.
+   * kubectl get deployments
+7. This is because Kubernetes will only update the deployment if the new image has a different tag.
+8. Rebuild the Docker image with a different tag.
+   * docker build -t academind/kub-first-app:2 .
+9. Push the image to Docker Hub.
+   * docker push academind/kub-first-app:2
+10. Set a new image to a specific container (kub-first-app) in a specific deployment (first-app).
+    * kubectl set image deployment/first-app kub-first-app=academind/kub-first-app:2
+11. Check the current deployment status
+    * kubectl rollout status deployment/first-app
+12. Open the URL to visit the web page. After some time, you can see the updated web page.
+13. On "minikube dashboard", you can see such actions on the events.
