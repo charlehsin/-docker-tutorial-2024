@@ -848,6 +848,137 @@ Check the following on deployment.yaml.
 * imagePullPolicy
 * livenessProbe
 
-## Tutorial 13: Managing data and volumes with Kubernetes
+## Tutorial 13: Managing data and volumes and environment variables with Kubernetes
 
-### 13-1:
+### 13-1: Starting projects
+
+Check the codes folder. At app.js, the post API will add the target text to a text.txt file. The get API will get the content of the text.txt file.
+
+1. docker-compose up -d --build
+2. Use postman to send post request to localhost/story and then send get request to localhost/story.
+3. docker-compose down
+4. docker container prune
+5. docker-compose up -d --build
+6. Use postman to send get request to localhost/story. The content is kept.
+7. docker-compose down
+
+This works because we set up the volume in docker-compose. Now we will see how to do this in Kubernetes.
+
+### 13-2: Creating a new deployment and service
+
+This is following the results of 13-1.
+
+Check the codes folder.
+
+1. Build the image.
+   * docker build -t academind/kub-data-demo .
+2. Push the image to DockerHub.
+   * docker login
+   * docker push academind/kub-data-demo
+3. Create deployment.yaml file.
+   * Check deployment.yaml file.
+4. Create service.yaml file.
+   * Check service.yaml file.
+5. Check the minikube is running. If not, start it.
+   * minikube status
+6. Apply the Kubernetes config files.
+   * kubectl apply -f=deployment.yaml -f=service.yaml
+7. Check the deployments.
+   * kubectl get deployments
+8. To get an URL to use from outside the Kubernetes cluster.
+   * minikube service story
+   * Note: If the Kubernetes is not on a local machine, we don't need this step and "kubectl get services" should show the external IP.
+9. Use postman with that IP address to post something and get.
+
+The problem is that, when the container restarts, all the data will be lost because we are not using Kubernetes volumes.
+
+Check [Volumes](https://kubernetes.io/docs/concepts/storage/volumes/).
+
+### 13-3: A first volume, the "emptyDir" type
+
+This is following the results of 13-2.
+
+Check [emptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir).
+
+Check the codes folder.
+
+1. Check app.js.
+   * We insert a intentional crash (to crash the container, not the pod) when a GET request is sent to url/error. Without volume, when Kubernetes auto restarts the container, the data will be lost.
+2. Build the image and push the image to DockerHub again.
+3. Need to define volume at the place where we define the pod.
+4. Check deployment.yaml file.
+   * Check "volumes". "emptyDir" creates an empty directory and keeps it alive as long as the pod is alive. Kubernetes will fill it with data.
+   * Check "volumeMounts". This specifies where the volume should be mounted inside the container. Our app.js writes data at /app/story folder.
+5. Check the minikube is running. If not, start it.
+   * minikube status
+6. Apply the Kubernetes config files.
+   * kubectl apply -f=deployment.yaml -f=service.yaml
+7. Check the deployments.
+   * kubectl get deployments
+8. To get an URL to use from outside the Kubernetes cluster.
+   * minikube service story
+   * Note: If the Kubernetes is not on a local machine, we don't need this step and "kubectl get services" should show the external IP.
+9. Use postman with that IP address to post something and get.
+
+Now if we try to send a GET request to url/error to crash the container, after the container is auto restarted, the data is till there.
+
+### 13-4: A second volume, the "hostPath" type
+
+This is following the results of 13-3.
+
+The "emptyDir" type of volume has 1 downside. It won't work if we have multiple replicas.
+
+Check [hostPath](https://kubernetes.io/docs/concepts/storage/volumes/#hostpath).
+
+Check the codes folder.
+
+1. Check deployment.yaml file.
+   * Check "volumes". "hostPath" will store the data on the host machine. This is similar to Docker's bind mount.
+
+This also kind-of only works in a developer environment when all things run on the same host. This has similar limitation as Docker's bindMount.
+
+### 13-5: Understanding "CSI" type
+
+Check [csi](https://kubernetes.io/docs/concepts/storage/volumes/#csi).
+
+### 13-6: Defining a persistent volume
+
+Check [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) and [Storage pros and cons: Block vs file vs object storage](https://www.computerweekly.com/feature/Storage-pros-and-cons-Block-vs-file-vs-object-storage).
+
+1. Create a host-pv.yaml file.
+   * Check the codes folder.
+
+### 13-7: Creating a persistent volume claim
+
+1. Create a host-pvc.yaml file.
+   * Check the codes folder.
+2. Check the deployment.yaml file.
+   * Check "volumes" to see how we use the claim.
+
+### 13-8: Using a claim in a pod
+
+This is following the results of 13-4.
+
+Check the codes folder. Note: Kubernetes provides different storage classes. For this tutorial, "standard" is fine. You can see this in host-pv.yaml and host-pvc.yaml files.
+
+1. kubectl apply -f=host-pv.yaml
+2. kubectl apply -f=host-pvc.yaml
+3. kubectl apply -f=deployment.yaml
+4. Get persistent volumes and claims and deployments
+   * kubectl get pv
+   * kubectl get pvc
+   * kubectl get deployments
+
+### 13-9: Using environment variables
+
+Check codes folder.
+
+1. Check app.js.
+   * Check "process.env."
+2. Check deployment.yaml.
+   * Check "env". Here you can just use the simple
+      * "value", or
+      * "valueFrom", which uses ConfigMap, specified at environment.yaml file.
+3. Then you can build and push the image, and then you can apply the Kubernetes yaml files.
+
+## Tutorial 14: Kubernetes networking
