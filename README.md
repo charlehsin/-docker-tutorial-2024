@@ -727,7 +727,7 @@ This is following the result of 12-4.
 6. Get pods. We should see 3 our pods.
    * kubectl get pods
 
-### 12-6: Changing codes, updating deployments, rollback deployment
+### 12-6: Changing codes, updating deployments
 
 This is following the result of 12-5.
 
@@ -752,3 +752,102 @@ This is following the result of 12-5.
     * kubectl rollout status deployment/first-app
 12. Open the URL to visit the web page. After some time, you can see the updated web page.
 13. On "minikube dashboard", you can see such actions on the events.
+
+### 12-7: Deployment rollback and history
+
+This is following the result of 12-6.
+
+1. If an image update is failing and stuck, we want to rollback an update.
+   * kubectl rollout undo deployment/first-app
+2. Get pods status.
+   * kubectl get pods
+3. Check the current deployment status
+   * kubectl rollout status deployment/first-app
+4. Check the deployment history
+   * kubectl rollout history deployment/first-app
+5. Check the deployment history with details.
+   * kubectl rollout history deployment/first-app --revision
+6. Check a specific revision of a deployment.
+   * kubectl rollout history deployment/first-app --revision=1
+7. If we want to go back to the original revision.
+   * kubectl rollout undo deployment/first-app --to-revision=1
+
+### 12-8: Deleting a service
+
+1. Delete a service.
+   * kubectl delete service first-app
+2. Delete a deployment.
+   * kubectl delete deployment first-app
+
+### 12-9: Creating a deployment configuration file and a service configuration (a declarative approach)
+
+Check [Objects In Kubernetes](https://kubernetes.io/docs/concepts/overview/working-with-objects/) and [Kubernetes API](https://kubernetes.io/docs/reference/kubernetes-api/).
+
+Check the codes folder.
+
+1. Check the deployments to make sure there is no ongoing deployment, pods, or services (except of the default Kubernetes service). If there is, delete them.
+2. Create a config file for deployment, deployment.yaml.
+   * Check the file in the codes folder.
+   * For apiVersion, check Kubernetes documentation's sample config file.
+   * For the "spec" of the "deployment", we need to have "selector". It tells the target deployment what templates/pods it needs to control.
+3. Use the config file.
+   * kubectl apply -f deployment.yaml
+4. Check the deployments and the pods.
+   * kubectl get deployments
+   * kubectl get pods
+5. Create a config file for service, service.yaml.
+   * Check the file in the codes folder.
+   * For the "spec" of the "service", we need to have "selector". It tells the target service what pods it needs to be applied to.
+   * "port" is for outside the container. "targetPort" is for inside the container.
+6. Use the config file.
+   * kubectl apply -f service.yaml
+7. Check the services.
+   * kubectl get services
+8. To get an URL to use from outside the Kubernetes cluster.
+   * minikube service backend
+   * Note: If the Kubernetes is not on a local machine, we don't need this step and "kubectl get services" should show the external IP.
+9. Open that URL by using a web browser.
+
+### 12-10: Updating and deleting resources
+
+For updating:
+
+1. Modify the yaml file.
+2. Apply again.
+
+For deleting:
+
+1. Delete the whole things.
+   * kubectl delete -f deployment.yaml -f service.yaml
+
+### 12-11: Merging multiple config files into one
+
+Check the codes folder.
+
+1. Check the master-deployment.yaml file.
+   * Note the 3 dashes.
+   * It is good practice to put "Service" first in the file.
+
+### 12-12: More on labels and selectors
+
+Check the codes folder.
+
+1. Check deployment.yaml file.
+   * Check the matchExpressions. This gives more flexibilities for selector.
+2. Can also use selector in kubectl command. Say if the deployment has a label "group: example".
+   * kubectl delete deployments,services -l group=example
+
+### 12-13: Liveness probes
+
+We can add "livenessProbe" key to the container to tell how Kubernetes monitors the target container. Check [Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/).
+
+### 12-14: More on the configuration options
+
+Check the following on deployment.yaml.
+
+* imagePullPolicy
+* livenessProbe
+
+## Tutorial 13: Managing data and volumes with Kubernetes
+
+### 13-1:
