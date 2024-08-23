@@ -982,3 +982,171 @@ Check codes folder.
 3. Then you can build and push the image, and then you can apply the Kubernetes yaml files.
 
 ## Tutorial 14: Kubernetes networking
+
+### 14-1: Starting project
+
+Check the codes folder.
+
+The following app containers will be in the same cluster.
+
+* 1 cluster
+  * 1 pod
+    * auth-api
+    * users-api: This will talk to auth-api, via pod-internal communication.
+  * 1 pod
+    * tasks-api: This will talk to auth-api, via cluster-internal communication.
+
+The outside client (e.g., Postman) will reach users-api and tasks-api.
+
+Let's try by using Docker Compose.
+
+1. docker-compose up -d --build
+2. Can try by using Postman
+   * POST request to localhost:8080/login
+   * GET request to localhost/verify-token/abc
+   * POST request to localhost:8000/tasks
+      * Need to add an "Authorization" header with value of "Bearer abc".
+   * GET request to localhost:8000/tasks
+3. docker-compose down
+
+### 14-2: Creating the first deployment and service for users-api
+
+Check the codes folder.
+
+1. Make sure the minikube is up and running.
+   * minikube status
+2. Make sure there is no on-going Kubernetes deployment and service.
+   * kubectl get deployments
+   * kubectl get services
+3. Check users-api/users-app.js file.
+   * Check "const hashedPW". We use dummy text because the auth-api is not working yet.
+   * Check "const response". We use dummy response because the auth-api is not working yet.
+4. Build the image and push it to DockerHub
+   * Got o users-api folder.
+   * docker build -t academind/kub-demo-users .
+   * docker push academind/kub-demo-user
+5. Check kubernetes/users-deployment.yaml file.
+6. Apply the file.
+   * Go the kubernetes folder.
+   * kubectl apply -f=users-deployment.yaml
+7. Get the pods
+   * kubectl get pods
+8. Now we want the outside world to talk to users-api, so we need a service.
+9. Check kubernetes/users-service.yaml file.
+   * We use LoadBalancer type for the outside world to connect.
+10. Apply the file.
+    * Go the kubernetes folder.
+    * kubectl apply -f=users-service.yaml
+11. To get an URL to use from outside the Kubernetes cluster.
+    * minikube service users-service
+    * Note: If the Kubernetes is not on a local machine, we don't need this step and "kubectl get services" should show the external IP.
+12. Use Postman to send POST request to URL/login and URL/signup.
+
+### 14-3: Multiple containers in one pod
+
+This is following the results of 14-2.
+
+Check the codes folder.
+
+1. Check users-api/users-app.js file.
+   * Check "const hashedPW" and "const response".
+      * We are using environmental variables for the auth-api URL.
+2. Check docker-compose.yaml.
+3. Build auth-api image and push it to DockerHub.
+   * Go to auth-api folder.
+   * docker build -t academind/kub-demo-auth .
+   * docker push academind/kub-demo-auth
+4. Check kubernetes/users-deployment.yaml.
+   * We add the 2nd container.
+   * We also use "latest" tag for the container images. Doing this can make Kubernetes always fetch the latest image.
+5. The auth-api does not need to be in kubernetes/users-service.yaml, because it is only talked to by the users-api inside the same pod.
+6. Rebuild users-api image and push it to DockerHub.
+   * Go to users-api folder.
+   * docker build -t academind/kub-demo-users .
+   * docker push academind/kub-demo-users
+7. For pod-internal communication, Kubernetes allows you to send the request to "localhost" with the target port.
+8. Check kubernetes/users-deployment.yaml.
+   * Check the "env".
+9. Apply the file.
+   * Go to kubernetes folder.
+   * kubectl apply -f=users-deployment.yaml.
+10. Get the pods.
+    * kubectl get pods
+11. Since we only change the deployment, the service is not changed. The external IP obtained at 14-2 is still the same.
+12. Use Postman to send POST request to URL/signup and to URL/login.
+
+### 14-4: One container in one pod, and pod-to-pod comm, and DNS
+
+We want to put each app container in a pod, so that auth-api and users-api do not share a pod anymore.
+
+Check the codes folder.
+
+Kubernetes will auto generate
+
+* environment variables to represent each service's URL. It is [SERVICE_NAME]_SERVICE_HOST.
+  * [SERVICE_NAME] will be all caps. Dash will become underscore. For example, process.env.AUTH_SERVICE_SERVICE_HOST and process.env.USERS_SERVICE_SERVICE_HOST.
+  * To make this work with Docker/Docker Compose (not just Kubernetes), we need to add this environment variable to docker-composer.yaml file too.
+* domain name for each service inside a cluster. It is the service name.[namespaces].
+  * For available [namespaces], use "kubectl get namespaces".
+  * If we don't tell Kubernetes to do differently, the namespace will be default.
+  * For example, auth-service.default.
+
+1. Check kubernetes/auth-deployment.yaml and users-deployment.yaml.
+2. Check kubernetes/auth-service.yaml and users-service.yaml.
+   * For auth-service.yaml, the type is ClusterIP. This won't be exposed to outside world.
+3. Check users-api/users-app.js file.
+   * Check process.env.AUTH_SERVICE_SERVICE_HOST.
+4. For DNS and Kubernetes auto-generated domain name, check kubernetes/users-deployment.yaml file.
+   * Check "auth-service.default".
+5. Rebuild users-api image and push it to DockerHub.
+6. Delete the users deployment first. Apply the users-deployment yaml file.
+7. Can still send the /signup and the /login POST request.
+
+In general,
+
+* You don't want to have two containers in a pod, unless the containers are tightly coupled.
+* For pod-to-pod communications, you can choose
+  * Option 1: auto-generated environment variables
+  * Option 2: auto-generated domain names, which will be used in the "environment variable value" in deployment config file.
+  * Note: Option 2 is more popular one.
+
+### 14-5: Working on tasks-api
+
+Check the codes folder.
+
+### 14-6: Adding a containerized frontend by using Docker
+
+This is following the results of 14-5.
+
+Check the codes folder.
+
+1. Check frontend/Dockerfile.
+2. Check frontend/App.js.
+   * The URL of the request is obtained using the same value of the Postman request at 14-4 and 14-5.
+3. Build the front-end image.
+4. Run a local container by using this image.
+   * docker run -p 80:80 --rm -d academind/kub-demo-frontend
+   * Note: The codes will be run on the web browser of the host machine.
+5. Need to handle CORS for web browser while Postman does not have this problem.
+   * Check res.setHeader at tasks-api/tasks-app.js file.
+   * We need to do similar thing for others that the front-end talks to.
+   * Rebuild and push tasks-api image. Reapply tasks deployment.
+
+### 14-7: Deploying frontend with Kubernetes and using a reverse proxy
+
+This is following the results of 14-6.
+
+We will create a new pod for the frontend container. We need a new frontend deployment and frontend service.
+
+How does our frontend source code know the IP address of other exposed services though? Note that we need to get the exposed IP address so that outside can use since the frontend codes are run on the web browser on the host machine.
+
+* We use reverse proxy.
+  * Check the frontend/conf/nginx.conf file.
+    * For special request reaching nginx, it will redirect it to somewhere else.
+    * Check "proxy_pas". We are using Kubernetes auto-generated domain name for the tasks service, tasks-service.default. nginx is a web server and is not a front-end, so nignx will be running on the container in our cluster. Therefore, we can use the Kubernetes generated service domain name.
+  * Check the frontend/src/App.js file.
+    * Check "fetch('/api/tasks'".
+
+Check the codes folder.
+
+## Tutorial 15: Kubernetes deployment (AWS EKS)
