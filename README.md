@@ -1,7 +1,9 @@
 # docker-tutorial-2024
 
-Docker learning tutorial in 2024. This is mainly to follow [Docker & Kubernetes: The Practical Guide [2024 Edition]
-on Udemy](https://intel.udemy.com/course/docker-kubernetes-the-practical-guide).
+Docker learning tutorial in 2024. This is mainly to follow
+
+* [Docker & Kubernetes: The Practical Guide [2024 Edition] on Udemy](https://intel.udemy.com/course/docker-kubernetes-the-practical-guide).
+* [K3s - Lightweight Kubernetes](https://docs.k3s.io/)
 
 ## Installation
 
@@ -1150,3 +1152,24 @@ How does our frontend source code know the IP address of other exposed services 
 Check the codes folder.
 
 ## Tutorial 15: Kubernetes deployment (AWS EKS)
+
+## Tutorial 16: K3s
+
+Check
+
+* [K3s - Lightweight Kubernetes](https://docs.k3s.io/)
+* [A Basic k3s Tutorial for Kubernetes](https://www.devopsschool.com/blog/a-basic-k3s-tutorial-for-kubernetes/)
+* [Getting Started With K3s](https://www.baeldung.com/ops/k3s-getting-started)
+
+## Tutorial 17: Ingress
+
+Check
+
+* [Kubernetes NodePort vs LoadBalancer vs Ingress? When should I use what?](https://medium.com/google-cloud/kubernetes-nodeport-vs-loadbalancer-vs-ingress-when-should-i-use-what-922f010849e0)
+* [Kubernetes Ingress Tutorial for Beginners](https://www.youtube.com/watch?v=80Ew_fsV4rM)
+
+## Tutorial 18: Helm
+
+Check
+
+* [What is Helm in Kubernetes? Helm and Helm Charts explained](https://www.youtube.com/watch?v=-ykwb1d0DXU)
